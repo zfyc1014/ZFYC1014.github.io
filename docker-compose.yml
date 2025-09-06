@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  echo-hole:
+    build: .
+    container_name: echo-hole
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - ADMIN_TOKEN=change_me
+      - CORS_ORIGIN=*
+      - DB_PATH=/data/data.db
+      - IP_SALT=please_change_salt
+    volumes:
+      - ./data:/data
+    restart: unless-stopped 
