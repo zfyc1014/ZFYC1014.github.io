@@ -41,8 +41,8 @@ npm start
 
 ## ⚙️ 环境变量配置
 - `PORT`: 服务端口，默认 3000
-- `ADMIN_USERNAME`: 管理员用户名，默认 admin
-- `ADMIN_PASSWORD`: 管理员密码，默认 admin123
+- `ADMIN_USERNAME`: 管理员用户名，默认密码联系QQ
+- `ADMIN_PASSWORD`: 管理员密码
 - `CORS_ORIGIN`: CORS 允许来源，默认 *
 - `DB_PATH`: SQLite 文件路径，默认 data.db
 - `IP_SALT`: IP 哈希盐，默认 echo-hole-salt
@@ -192,5 +192,6 @@ npx pm2 start src/server.js -n echo-hole
 
 
 ---
+
 
 **留声洞** - 就是为了传小道消息[狗头]
