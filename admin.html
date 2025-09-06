@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-cn">
 <head>
 <meta charset="utf-8" />
@@ -189,6 +189,19 @@ display: none;
 .tab-content.active {
 display: block;
 }
+.back-link {
+position: fixed;
+top: 20px;
+left: 20px;
+background: rgba(255, 255, 255, 0.9);
+padding: 8px 15px;
+border-radius: 20px;
+text-decoration: none;
+color: #667eea;
+font-size: 12px;
+font-weight: 500;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
 @media (max-width: 768px) {
 .container {
 padding: 15px;
@@ -199,10 +212,17 @@ grid-template-columns: 1fr;
 .table {
 font-size: 14px;
 }
+.back-link {
+position: static;
+margin: 10px 0;
+text-align: center;
+}
 }
 </style>
 </head>
 <body>
+<a href="index.html" class="back-link">← 返回主页</a>
+
 <div class="container">
 <!-- 登录界面 -->
 <div id="loginContainer" class="login-container">
@@ -240,10 +260,6 @@ font-size: 14px;
 <div class="stat-card">
 <div class="stat-number" id="uniqueVisitors">-</div>
 <div class="stat-label">独立访客</div>
-</div>
-<div class="stat-card">
-<div class="stat-number" id="uniqueIPs">-</div>
-<div class="stat-label">独立IP</div>
 </div>
 </div>
 </div>
@@ -297,288 +313,272 @@ font-size: 14px;
 </div>
 </div>
 
+<script src="js/database.js"></script>
 <script>
 let currentTab = 'analytics';
 let refreshInterval;
 
+// 管理员配置
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'admin123';
+
+// 等待数据库初始化
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await window.db.init();
+        await window.db.recordVisit('/admin.html');
+        checkLoginStatus();
+    } catch (error) {
+        console.error('Database initialization failed:', error);
+        showTip('数据库初始化失败', 'error');
+    }
+});
+
 // 检查登录状态
-async function checkLoginStatus() {
-try {
-const response = await fetch('/api/admin/status');
-const data = await response.json();
-if (data.loggedIn) {
-showAdminInterface();
-} else {
-showLoginInterface();
-}
-} catch (error) {
-showLoginInterface();
-}
+function checkLoginStatus() {
+    const isLoggedIn = localStorage.getItem('admin_logged_in') === 'true';
+    if (isLoggedIn) {
+        showAdminInterface();
+    } else {
+        showLoginInterface();
+    }
 }
 
 // 显示登录界面
 function showLoginInterface() {
-document.getElementById('loginContainer').classList.remove('hidden');
-document.getElementById('adminContainer').classList.add('hidden');
+    document.getElementById('loginContainer').classList.remove('hidden');
+    document.getElementById('adminContainer').classList.add('hidden');
 }
 
 // 显示管理界面
 function showAdminInterface() {
-document.getElementById('loginContainer').classList.add('hidden');
-document.getElementById('adminContainer').classList.remove('hidden');
-loadAnalytics();
-loadPosts();
-loadRealtime();
-startAutoRefresh();
+    document.getElementById('loginContainer').classList.add('hidden');
+    document.getElementById('adminContainer').classList.remove('hidden');
+    loadAnalytics();
+    loadPosts();
+    loadRealtime();
+    startAutoRefresh();
 }
 
 // 登录
 async function login(event) {
-event.preventDefault();
-const username = document.getElementById('username').value;
-const password = document.getElementById('password').value;
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
-try {
-const response = await fetch('/api/admin/login', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ username, password })
-});
-
-if (response.ok) {
-showTip('登录成功', 'success');
-setTimeout(() => {
-showAdminInterface();
-}, 1000);
-} else {
-const data = await response.json();
-showTip(data.error || '登录失败', 'error');
-}
-} catch (error) {
-showTip('网络错误，请重试', 'error');
-}
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        localStorage.setItem('admin_logged_in', 'true');
+        showTip('登录成功', 'success');
+        setTimeout(() => {
+            showAdminInterface();
+        }, 1000);
+    } else {
+        showTip('用户名或密码错误', 'error');
+    }
 }
 
 // 登出
-async function logout() {
-try {
-await fetch('/api/admin/logout', { method: 'POST' });
-showLoginInterface();
-stopAutoRefresh();
-} catch (error) {
-console.error('Logout error:', error);
-}
+function logout() {
+    localStorage.removeItem('admin_logged_in');
+    showLoginInterface();
+    stopAutoRefresh();
 }
 
 // 切换标签页
 function switchTab(tabName) {
-// 更新标签样式
-document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-event.target.classList.add('active');
-document.getElementById(tabName + 'Tab').classList.add('active');
-currentTab = tabName;
+    // 更新标签样式
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(tabName + 'Tab').classList.add('active');
+    currentTab = tabName;
 
-// 加载对应数据
-if (tabName === 'analytics') {
-loadAnalytics();
-} else if (tabName === 'posts') {
-loadPosts();
-} else if (tabName === 'realtime') {
-loadRealtime();
-}
+    // 加载对应数据
+    if (tabName === 'analytics') {
+        loadAnalytics();
+    } else if (tabName === 'posts') {
+        loadPosts();
+    } else if (tabName === 'realtime') {
+        loadRealtime();
+    }
 }
 
 // 加载统计数据
 async function loadAnalytics() {
-try {
-const response = await fetch('/api/admin/analytics?timeRange=24');
-const data = await response.json();
+    try {
+        const data = await window.db.getAnalytics(24);
 
-document.getElementById('totalVisits').textContent = data.totalVisits;
-document.getElementById('uniqueVisitors').textContent = data.uniqueVisitors;
-document.getElementById('uniqueIPs').textContent = data.uniqueIPs;
+        document.getElementById('totalVisits').textContent = data.totalVisits;
+        document.getElementById('uniqueVisitors').textContent = data.uniqueVisitors;
 
-// 设备统计
-const deviceStatsBody = document.getElementById('deviceStats');
-deviceStatsBody.innerHTML = '';
-data.deviceStats.forEach(stat => {
-const percentage = ((stat.count / data.totalVisits) * 100).toFixed(1);
-deviceStatsBody.innerHTML += `
-<tr>
-<td>${stat.device_model}</td>
-<td>${stat.count}</td>
-<td>${percentage}%</td>
-</tr>
-`;
-});
+        // 设备统计
+        const deviceStatsBody = document.getElementById('deviceStats');
+        deviceStatsBody.innerHTML = '';
+        data.deviceStats.forEach(stat => {
+            const percentage = data.totalVisits > 0 ? ((stat.count / data.totalVisits) * 100).toFixed(1) : 0;
+            deviceStatsBody.innerHTML += `
+                <tr>
+                    <td>${stat.device_model}</td>
+                    <td>${stat.count}</td>
+                    <td>${percentage}%</td>
+                </tr>
+            `;
+        });
 
-// 浏览器统计
-const browserStatsBody = document.getElementById('browserStats');
-browserStatsBody.innerHTML = '';
-data.browserStats.forEach(stat => {
-const percentage = ((stat.count / data.totalVisits) * 100).toFixed(1);
-browserStatsBody.innerHTML += `
-<tr>
-<td>${stat.browser_kernel}</td>
-<td>${stat.count}</td>
-<td>${percentage}%</td>
-</tr>
-`;
-});
-} catch (error) {
-console.error('Analytics load error:', error);
-}
+        // 浏览器统计
+        const browserStatsBody = document.getElementById('browserStats');
+        browserStatsBody.innerHTML = '';
+        data.browserStats.forEach(stat => {
+            const percentage = data.totalVisits > 0 ? ((stat.count / data.totalVisits) * 100).toFixed(1) : 0;
+            browserStatsBody.innerHTML += `
+                <tr>
+                    <td>${stat.browser_kernel}</td>
+                    <td>${stat.count}</td>
+                    <td>${percentage}%</td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        console.error('Analytics load error:', error);
+    }
 }
 
 // 加载帖子列表
 async function loadPosts() {
-try {
-const response = await fetch('/api/admin/posts?status=pending');
-const data = await response.json();
+    try {
+        const data = await window.db.getPendingPosts();
 
-const postsList = document.getElementById('postsList');
-if (data.list.length === 0) {
-postsList.innerHTML = '<p style="text-align: center; color: #6c757d;">暂无待审核内容</p>';
-return;
-}
+        const postsList = document.getElementById('postsList');
+        if (data.list.length === 0) {
+            postsList.innerHTML = '<p style="text-align: center; color: #6c757d;">暂无待审核内容</p>';
+            return;
+        }
 
-postsList.innerHTML = '';
-data.list.forEach(post => {
-const postDiv = document.createElement('div');
-postDiv.className = 'card';
-postDiv.style.marginBottom = '15px';
-postDiv.innerHTML = `
-<div style="margin-bottom: 15px;">
-<strong>ID:</strong> ${post.id} | 
-<strong>时间:</strong> ${new Date(post.created_at * 1000).toLocaleString()}
-</div>
-<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; white-space: pre-wrap;">${escapeHtml(post.content)}</div>
-<div>
-<button class="btn" onclick="approvePost(${post.id})">✅ 通过</button>
-<button class="btn btn-danger" onclick="rejectPost(${post.id})">❌ 拒绝</button>
-<button class="btn btn-secondary" onclick="deletePost(${post.id})">🗑️ 删除</button>
-</div>
-`;
-postsList.appendChild(postDiv);
-});
-} catch (error) {
-console.error('Posts load error:', error);
-}
+        postsList.innerHTML = '';
+        data.list.forEach(post => {
+            const postDiv = document.createElement('div');
+            postDiv.className = 'card';
+            postDiv.style.marginBottom = '15px';
+            postDiv.innerHTML = `
+                <div style="margin-bottom: 15px;">
+                    <strong>ID:</strong> ${post.id} | 
+                    <strong>时间:</strong> ${new Date(post.created_at * 1000).toLocaleString()}
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; white-space: pre-wrap;">${escapeHtml(post.content)}</div>
+                <div>
+                    <button class="btn" onclick="approvePost(${post.id})">✅ 通过</button>
+                    <button class="btn btn-danger" onclick="rejectPost(${post.id})">❌ 拒绝</button>
+                    <button class="btn btn-secondary" onclick="deletePost(${post.id})">🗑️ 删除</button>
+                </div>
+            `;
+            postsList.appendChild(postDiv);
+        });
+    } catch (error) {
+        console.error('Posts load error:', error);
+    }
 }
 
 // 加载实时数据
 async function loadRealtime() {
-try {
-const response = await fetch('/api/admin/realtime?limit=20');
-const data = await response.json();
+    try {
+        const data = await window.db.getAnalytics(1); // 最近1小时
 
-const realtimeList = document.getElementById('realtimeList');
-if (data.visits.length === 0) {
-realtimeList.innerHTML = '<p style="text-align: center; color: #6c757d;">暂无访问记录</p>';
-return;
-}
+        const realtimeList = document.getElementById('realtimeList');
+        if (data.recentVisits.length === 0) {
+            realtimeList.innerHTML = '<p style="text-align: center; color: #6c757d;">暂无访问记录</p>';
+            return;
+        }
 
-realtimeList.innerHTML = '';
-data.visits.forEach(visit => {
-const visitDiv = document.createElement('div');
-visitDiv.style.cssText = 'padding: 10px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center;';
-visitDiv.innerHTML = `
-<div>
-<strong>${visit.ip_address}</strong> | 
-${visit.device_model} | 
-${visit.browser_kernel} | 
-${visit.page_path}
-</div>
-<div class="small">${new Date(visit.created_at * 1000).toLocaleString()}</div>
-`;
-realtimeList.appendChild(visitDiv);
-});
-} catch (error) {
-console.error('Realtime load error:', error);
-}
+        realtimeList.innerHTML = '';
+        data.recentVisits.slice(0, 20).forEach(visit => {
+            const visitDiv = document.createElement('div');
+            visitDiv.style.cssText = 'padding: 10px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center;';
+            visitDiv.innerHTML = `
+                <div>
+                    <strong>访客 ${visit.visitor_id.slice(0, 8)}</strong> | 
+                    ${visit.device_model} | 
+                    ${visit.browser_kernel} | 
+                    ${visit.page_path}
+                </div>
+                <div class="small">${new Date(visit.created_at * 1000).toLocaleString()}</div>
+            `;
+            realtimeList.appendChild(visitDiv);
+        });
+    } catch (error) {
+        console.error('Realtime load error:', error);
+    }
 }
 
 // 审核帖子
 async function approvePost(id) {
-try {
-await fetch('/api/admin/approve', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ id })
-});
-showTip('帖子已通过审核', 'success');
-loadPosts();
-} catch (error) {
-showTip('操作失败', 'error');
-}
+    try {
+        await window.db.approvePost(id);
+        showTip('帖子已通过审核', 'success');
+        loadPosts();
+    } catch (error) {
+        console.error('Approve error:', error);
+        showTip('操作失败', 'error');
+    }
 }
 
 async function rejectPost(id) {
-try {
-await fetch('/api/admin/reject', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ id })
-});
-showTip('帖子已拒绝', 'success');
-loadPosts();
-} catch (error) {
-showTip('操作失败', 'error');
-}
+    try {
+        await window.db.rejectPost(id);
+        showTip('帖子已拒绝', 'success');
+        loadPosts();
+    } catch (error) {
+        console.error('Reject error:', error);
+        showTip('操作失败', 'error');
+    }
 }
 
 async function deletePost(id) {
-if (!confirm('确定要删除这条帖子吗？')) return;
-try {
-await fetch('/api/admin/delete', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ id })
-});
-showTip('帖子已删除', 'success');
-loadPosts();
-} catch (error) {
-showTip('操作失败', 'error');
-}
+    if (!confirm('确定要删除这条帖子吗？')) return;
+    try {
+        await window.db.deletePost(id);
+        showTip('帖子已删除', 'success');
+        loadPosts();
+    } catch (error) {
+        console.error('Delete error:', error);
+        showTip('操作失败', 'error');
+    }
 }
 
 // 自动刷新
 function startAutoRefresh() {
-refreshInterval = setInterval(() => {
-if (currentTab === 'analytics') {
-loadAnalytics();
-} else if (currentTab === 'realtime') {
-loadRealtime();
-}
-}, 5000); // 每5秒刷新一次
+    refreshInterval = setInterval(() => {
+        if (currentTab === 'analytics') {
+            loadAnalytics();
+        } else if (currentTab === 'realtime') {
+            loadRealtime();
+        }
+    }, 5000); // 每5秒刷新一次
 }
 
 function stopAutoRefresh() {
-if (refreshInterval) {
-clearInterval(refreshInterval);
-}
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
 }
 
 function showTip(message, type) {
-const tip = document.getElementById('loginTip');
-tip.innerHTML = message;
-tip.className = `tip ${type}`;
-setTimeout(() => {
-tip.innerHTML = '';
-tip.className = '';
-}, 3000);
+    const tip = document.getElementById('loginTip');
+    tip.innerHTML = message;
+    tip.className = `tip ${type}`;
+    setTimeout(() => {
+        tip.innerHTML = '';
+        tip.className = '';
+    }, 3000);
 }
 
 function escapeHtml(text) {
-const div = document.createElement('div');
-div.textContent = text;
-return div.innerHTML;
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // 初始化
 document.getElementById('loginForm').addEventListener('submit', login);
-checkLoginStatus();
 </script>
 </body>
 </html>
