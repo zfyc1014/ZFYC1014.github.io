@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>留声洞 - 匿名树洞</title>
+<style>
+* { box-sizing: border-box; }
+body {
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+margin: 0;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+color: #333;
+line-height: 1.6;
+min-height: 100vh;
+}
+.container {
+max-width: 800px;
+margin: 0 auto;
+padding: 20px;
+}
+header {
+background: rgba(255, 255, 255, 0.95);
+backdrop-filter: blur(10px);
+border-radius: 15px;
+padding: 20px;
+margin-bottom: 20px;
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.logo {
+font-size: 24px;
+font-weight: 700;
+background: linear-gradient(45deg, #667eea, #764ba2);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+}
+.card {
+background: rgba(255, 255, 255, 0.95);
+backdrop-filter: blur(10px);
+border-radius: 15px;
+padding: 25px;
+margin: 20px 0;
+box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.card h3 {
+margin: 0 0 15px 0;
+color: #333;
+font-size: 20px;
+}
+.row {
+display: flex;
+gap: 12px;
+align-items: center;
+flex-wrap: wrap;
+}
+.btn {
+cursor: pointer;
+border: none;
+background: linear-gradient(45deg, #667eea, #764ba2);
+color: white;
+padding: 10px 20px;
+border-radius: 25px;
+font-weight: 500;
+transition: all 0.3s ease;
+text-decoration: none;
+display: inline-block;
+}
+.btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+.btn:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+transform: none;
+}
+.btn-secondary {
+background: #f8f9fa;
+color: #6c757d;
+border: 1px solid #dee2e6;
+}
+.btn-secondary:hover {
+background: #e9ecef;
+box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+textarea {
+width: 100%;
+min-height: 120px;
+border: 2px solid #e9ecef;
+border-radius: 12px;
+padding: 15px;
+font-family: inherit;
+font-size: 14px;
+resize: vertical;
+transition: border-color 0.3s ease;
+}
+textarea:focus {
+outline: none;
+border-color: #667eea;
+box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+.small {
+font-size: 13px;
+color: #6c757d;
+}
+.disclaimer-link {
+color: #667eea;
+text-decoration: none;
+font-weight: 500;
+}
+.disclaimer-link:hover {
+text-decoration: underline;
+}
+.checkbox-container {
+display: flex;
+align-items: center;
+gap: 8px;
+margin: 15px 0;
+}
+.checkbox-container input[type="checkbox"] {
+width: 18px;
+height: 18px;
+accent-color: #667eea;
+}
+.tip {
+padding: 10px 15px;
+border-radius: 8px;
+margin: 10px 0;
+font-size: 14px;
+}
+.tip.success {
+background: #d4edda;
+color: #155724;
+border: 1px solid #c3e6cb;
+}
+.tip.error {
+background: #f8d7da;
+color: #721c24;
+border: 1px solid #f5c6cb;
+}
+.post-item {
+background: rgba(255, 255, 255, 0.95);
+backdrop-filter: blur(10px);
+border-radius: 15px;
+padding: 20px;
+margin: 15px 0;
+box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+border: 1px solid rgba(255, 255, 255, 0.2);
+transition: transform 0.3s ease;
+}
+.post-item:hover {
+transform: translateY(-2px);
+}
+.post-content {
+margin-bottom: 15px;
+white-space: pre-wrap;
+word-break: break-word;
+}
+.post-meta {
+display: flex;
+justify-content: space-between;
+align-items: center;
+flex-wrap: wrap;
+gap: 10px;
+}
+.post-actions {
+display: flex;
+gap: 8px;
+}
+.load-more {
+text-align: center;
+margin: 30px 0;
+}
+.loading {
+opacity: 0.6;
+pointer-events: none;
+}
+.admin-link {
+position: fixed;
+top: 20px;
+right: 20px;
+background: rgba(255, 255, 255, 0.9);
+padding: 8px 15px;
+border-radius: 20px;
+text-decoration: none;
+color: #667eea;
+font-size: 12px;
+font-weight: 500;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+@media (max-width: 768px) {
+.container {
+padding: 15px;
+}
+header {
+flex-direction: column;
+gap: 15px;
+text-align: center;
+}
+.row {
+flex-direction: column;
+align-items: stretch;
+}
+.post-meta {
+flex-direction: column;
+align-items: flex-start;
+}
+.post-actions {
+width: 100%;
+justify-content: space-between;
+}
+.admin-link {
+position: static;
+margin: 10px 0;
+text-align: center;
+}
+}
+</style>
+</head>
+<body>
+<a href="admin.html" class="admin-link">🔐 管理后台</a>
+
+<div class="container">
+<header>
+<div class="logo">🔊 留声洞</div>
+<button class="btn btn-secondary" onclick="load()">🔄 刷新</button>
+</header>
+
+<div class="card">
+<h3>📝 匿名投稿</h3>
+<div class="small" style="margin-bottom: 15px;">
+<a href="disclaimer.html" target="_blank" rel="noopener" class="disclaimer-link">
+📋 投稿免责声明（请先阅读）
+</a>
+</div>
+<textarea id="content" placeholder="写下你想说的（最多1000字，直接发布）"></textarea>
+<div class="row">
+<button class="btn" onclick="submitPost()">📤 提交</button>
+</div>
+<div class="checkbox-container">
+<input type="checkbox" id="agree" />
+<label for="agree" class="small">
+我已阅读并同意 <a href="disclaimer.html" target="_blank" rel="noopener" class="disclaimer-link">投稿免责声明</a>
+</label>
+</div>
+<div id="tip"></div>
+</div>
+
+<div id="list"></div>
+<div class="load-more">
+<button class="btn btn-secondary" onclick="nextPage()">📄 加载更多</button>
+</div>
+</div>
+
+<!-- 使用CDN加载Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/database.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
